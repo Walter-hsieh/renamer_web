@@ -7,7 +7,7 @@ $(document).ready(function() {
 
     // Ajax form submission
     $('#uploadForm').on('submit', function (e) {
-        e.preventDefault();
+        e.preventDefault();  // Prevent the default form submission
         var formData = new FormData(this);
 
         $.ajax({
@@ -18,8 +18,8 @@ $(document).ready(function() {
             processData: false,
             success: function (response) {
                 if (response.error) {
-                    alert(response.error);
-                } else if (response.filename) {  // Check if the filename is present
+                    alert(response.error);  // Alert in case of server-side error
+                } else if (response.filename) {  // Ensure the filename exists
                     var downloadUrl = '/processed/' + response.filename;
                     console.log("Download URL: " + downloadUrl);  // Debug line to check URL
                     $('#result').removeClass('d-none');
@@ -29,8 +29,8 @@ $(document).ready(function() {
                     alert("Filename was not returned correctly from the server.");
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {  
-                console.error('Error: ' + textStatus, errorThrown);
+            error: function (jqXHR, textStatus, errorThrown) {  // Correctly structured error function
+                console.error('Error: ' + textStatus + ', ' + errorThrown);
                 alert('An error occurred while processing the file. Please try again.');
             }
         });
