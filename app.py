@@ -160,5 +160,12 @@ def download_file(filename):
         print(f"File not found: {file_path}")
         abort(404)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# works on local
+# if __name__ == '__main__':
+#     # app.run(debug=True)
+
+# For public internet
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Get the port from environment or default to 5000
+    app.run(host="0.0.0.0", port=port, debug=True)
+
