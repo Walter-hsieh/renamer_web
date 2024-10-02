@@ -18,19 +18,26 @@ $(document).ready(function() {
             contentType: false,  // Let jQuery handle the content type
             processData: false,  // Don't process the files, let them be sent as FormData
             success: function (response) {
-                // Check for any errors in the response
-                if (response.error) {
-                    alert(response.error);  // Show error message if any
+                // Try to parse response properly
+                if (typeof response === "object" && response !== null) {
+                    if (response.error) {
+                        alert(response.error);  // Show error message if any
+                    } else if (response.filename) {
+                        // On success, display the download link
+                        var downloadUrl = '/processed/' + response.filename;
+                        $('#result').removeClass('d-none');  // Show the result section
+                        $('#downloadLink').attr('href', downloadUrl);  // Set download link href
+                        $('#downloadLink').text('Download ' + response.filename);  // Update link text
+                    } else {
+                        alert('Unexpected response format');
+                    }
                 } else {
-                    // On success, display the download link
-                    var downloadUrl = '/processed/' + response.filename;
-                    $('#result').removeClass('d-none');  // Show the result section
-                    $('#downloadLink').attr('href', downloadUrl);  // Set download link href
-                    $('#downloadLink').text('Download ' + response.filename);  // Update link text
+                    console.log("Response is not an object:", response);
+                    alert('Unexpected response format');
                 }
             },
-            error: function () {
-                alert('An error occurred while processing the file.');  // Show error if request fails
+            error: function () {  // Ensure error callback is correct
+                alert('An error occurred while processing the file.');  // Error handling
             }
         });
     });
