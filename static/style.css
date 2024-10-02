@@ -1,0 +1,25 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Arial', sans-serif;
+}
+
+.container {
+    max-width: 600px;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card h2 {
+    font-weight: 700;
+}
+
+.custom-file-input.selected:lang(en)::after {
+    content: "Selected";
+}
+
+#result {
+    display: none;
+}
