@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, send_from_directory, render_template, flash, abort, jsonify
+from flask import Flask, request, redirect, url_for, send_from_directory, render_template, flash, abort
 import os
 from werkzeug.utils import secure_filename
 import datetime
@@ -14,6 +14,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
+
 
 # Flask Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -49,15 +50,18 @@ def process_pdf(api_key, model_name, filename):
     # Initialize the appropriate LLM
     if 'gpt' in model_name:
         llm = ChatOpenAI(temperature=0, model_name=model_name, openai_api_key=api_key)
-    elif 'claude' in model_name:
-        llm = ChatAnthropic(temperature=0, model=model_name, anthropic_api_key=api_key)
-    elif 'mistral' in model_name:
-        llm = ChatMistralAI(temperature=0, model=model_name, mistral_api_key=api_key)
+    elif 'gpt' in model:
+        llm = ChatOpenAI(temperature=0, model_name=model, api_key=api)
+    elif 'claude' in model:
+        llm = ChatAnthropic(temperature=0, model=model, anthropic_api_key=api)
+    elif 'mistral' in model:
+        llm = ChatMistralAI(temperature=0, model=model, mistral_api_key=api)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
     
     user_input = '''Based on the file provided, generate a file name in this format: [year published]_[aspect of the technology]_[main topic]_[primary application].pdf. 
     Please do not give any response except for the file name. Do not include symbols like /, \\, ~, !, @, #, or $ in the file name.'''
+    
 
     rag_prompt = ChatPromptTemplate.from_messages([
         ("system", 'You are a helpful assistant. Use the following context when responding:\n\n{context}.'),
@@ -67,11 +71,15 @@ def process_pdf(api_key, model_name, filename):
     output_parser = StrOutputParser()
     rag_chain = rag_prompt | llm | StrOutputParser()
 
+
     response = rag_chain.invoke({
             "question": user_input,
             "context": context
         })
     
+    print(response)
+
+    # Extract the filename from the response
     new_filename = response.strip()
     
     # Ensure the filename is secure and ends with .pdf
@@ -86,7 +94,9 @@ def process_pdf(api_key, model_name, filename):
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         new_filename = f"{base}_{timestamp}{ext}"
         new_filepath = os.path.join(app.config['PROCESSED_FOLDER'], new_filename)
+        print(f"Saving file to: {new_filepath}")
     
+    # Move the processed file to the processed folder with the new name
     os.rename(pdf_path, new_filepath)
     return new_filename
 
@@ -99,11 +109,13 @@ def upload_page():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+        flash('No file part')
+        return redirect(request.url)
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        flash('No selected file')
+        return redirect(request.url)
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -113,28 +125,44 @@ def upload_file():
         api_key = request.form['api_key']
         model_name = request.form['model']
         
-        # Process the file and rename it
+        # Process the file
         try:
             new_filename = process_pdf(api_key, model_name, filename)
-            return jsonify({'filename': new_filename}), 200  # Return JSON with the new filename
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            flash(f'Error processing file: {e}')
+            return redirect(url_for('upload_page'))
         
+        # Redirect to download page
+        return redirect(url_for('download_page', filename=new_filename))
     else:
-        return jsonify({'error': 'Allowed file types are pdf.'}), 400
+        flash('Allowed file types are pdf.')
+        return redirect(request.url)
+
+# Route for the download page
+@app.route('/download/<filename>')
+def download_page(filename):
+    return render_template('download.html', filename=filename)
 
 # Route for downloading processed files
 @app.route('/processed/<filename>')
 def download_file(filename):
+    print("Requested filename:", filename)
     directory = app.config['PROCESSED_FOLDER']
     file_path = os.path.join(directory, filename)
+    print("Files in processed directory:", os.listdir(directory))
     if os.path.isfile(file_path):
         try:
             return send_from_directory(directory, filename, as_attachment=True)
         except Exception as e:
-            return jsonify({'error': f"Error sending file: {str(e)}"}), 500
+            print(f"Error sending file: {e}")
+            abort(500)
     else:
-        return jsonify({'error': 'File not found'}), 404
+        print(f"File not found: {file_path}")
+        abort(404)
+
+# works on local
+# if __name__ == '__main__':
+#     # app.run(debug=True)
 
 # For public internet
 if __name__ == "__main__":
