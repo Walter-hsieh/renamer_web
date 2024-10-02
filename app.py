@@ -106,7 +106,7 @@ def upload_page():
     return render_template('upload_v3.html')
 
 # Route for file upload handling
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['GET', 'POST']) # new
 def upload_file():
     if 'file' not in request.files:
         flash('No file part')
@@ -138,6 +138,8 @@ def upload_file():
         flash('Allowed file types are pdf.')
         return redirect(request.url)
 
+
+
 # Route for the download page
 @app.route('/download/<filename>')
 def download_page(filename):
@@ -156,9 +158,9 @@ def download_file(filename):
         except Exception as e:
             print(f"Error sending file: {e}")
             abort(500)
-    else:
-        print(f"File not found: {file_path}")
-        abort(404)
+        else:
+            print(f"File not found: {file_path}")
+            abort(404)
 
 # works on local
 # if __name__ == '__main__':
