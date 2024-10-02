@@ -19,15 +19,17 @@ $(document).ready(function() {
             success: function (response) {
                 if (response.error) {
                     alert(response.error);
-                } else {
+                } else if (response.filename) {  // Check if the filename is present
                     var downloadUrl = '/processed/' + response.filename;
-                    console.log("Download URL: " + downloadUrl); // Debug line to check URL
+                    console.log("Download URL: " + downloadUrl);  // Debug line to check URL
                     $('#result').removeClass('d-none');
                     $('#downloadLink').attr('href', downloadUrl);
                     $('#downloadLink').text('Download ' + response.filename);
+                } else {
+                    alert("Filename was not returned correctly from the server.");
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {  // Updated error callback for more detailed debugging
+            error: function (jqXHR, textStatus, errorThrown) {  
                 console.error('Error: ' + textStatus, errorThrown);
                 alert('An error occurred while processing the file. Please try again.');
             }
