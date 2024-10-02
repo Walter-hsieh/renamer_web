@@ -1,0 +1,8 @@
+Flask==2.1.2
+Werkzeug==2.1.2
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-mistralai
+langchain-community
+langchain-core
